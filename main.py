@@ -40,12 +40,26 @@ def output_path() -> Path:
         return local / "entry.txt"
 
 
-def main() -> None:
+def check(path: Path) -> None:
+    """Re-read the written file from disk and verify it byte for byte,
+    so a truncated or mangled write can never reach the gate quietly."""
+    raw = path.read_bytes()
+    if raw != FORTUNE.encode("utf-8"):
+        raise ValueError(f"{path} does not match the fortune byte for byte")
+    validate(raw.decode("utf-8"))
+    print(f"check ok: {path} matches, {len(raw)} bytes")
+
+
+def main(argv: list[str]) -> None:
     validate(FORTUNE)
     path = output_path()
     path.write_text(FORTUNE, encoding="utf-8")
     print(f"wrote {len(FORTUNE)} chars to {path}")
+    if "--check" in argv:
+        check(path)
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1:])
